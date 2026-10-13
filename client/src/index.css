@@ -1,0 +1,45 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Source+Sans+3:wght@400;500;600&display=swap');
+
+:root {
+  --bg: #121820;
+  --panel: #171f29;
+  --cream: #f3efe6;
+  --text: #d7d0c4;
+  --muted: #a8a093;
+  --gold: #c4a574;
+  --line: #2b3542;
+  --serif: 'Cormorant Garamond', Georgia, serif;
+  --sans: 'Source Sans 3', system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-padding-top: 6rem;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.65;
+}
+
+a {
+  color: var(--gold);
+}
+
+button,
+input,
+select {
+  font-family: inherit;
+}
