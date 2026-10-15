@@ -4,30 +4,52 @@ export default function NewsletterSignup() {
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const validateEmail = (val) => {
-    // Basic standard email pattern check (contains text, @, text, ., text)
     const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return pattern.test(val);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
-    if (!email.trim()) {
+    const trimmedEmail = email.trim();
+
+    if (!trimmedEmail) {
       setError('Email address is required.');
       return;
     }
 
-    if (!validateEmail(email.trim())) {
+    if (!validateEmail(trimmedEmail)) {
       setError('Please enter a valid email address (e.g., name@example.com).');
       return;
     }
 
-    // Mock confirmation for now (we will wire to Flask/Postgres next)
-    console.log('Newsletter signup submitted:', email.trim());
-    setSuccess(true);
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch('http://127.0.0.1:5000/api/newsletter', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: trimmedEmail }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to subscribe.');
+      }
+
+      setSuccess(true);
+    } catch (err) {
+      setError(err.message || 'Unable to connect to server. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleReset = () => {
@@ -54,6 +76,7 @@ export default function NewsletterSignup() {
             <input
               type="email"
               value={email}
+              disabled={isSubmitting}
               onChange={(e) => {
                 setEmail(e.target.value);
                 if (error) setError('');
@@ -61,8 +84,8 @@ export default function NewsletterSignup() {
               placeholder="Enter your email address"
               className={error ? 'input-error' : ''}
             />
-            <button type="submit" className="btn-primary">
-              Subscribe
+            <button type="submit" className="btn-primary" disabled={isSubmitting}>
+              {isSubmitting ? 'Subscribing...' : 'Subscribe'}
             </button>
           </div>
           {error && <p className="error-message">{error}</p>}
