@@ -1,4 +1,5 @@
 import os
+import random
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
@@ -37,18 +38,30 @@ def subscribe_newsletter():
     conn = None
     try:
         conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute(
-            "INSERT INTO newsletter_subscribers (email) VALUES (%s) RETURNING id;",
-            (email,)
-        )
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        
+        # Check if customer already exists in FR-17 customers table
+        cur.execute("SELECT customer_id FROM customers WHERE email_address = %s;", (email,))
+        existing = cur.fetchone()
+
+        if existing:
+            cur.execute(
+                "UPDATE customers SET newsletter_signup = TRUE WHERE email_address = %s;",
+                (email,)
+            )
+        else:
+            cur.execute(
+                """
+                INSERT INTO customers (customer_name, email_address, phone_number, newsletter_signup)
+                VALUES (%s, %s, %s, TRUE);
+                """,
+                ("Newsletter Subscriber", email, None)
+            )
+            
         conn.commit()
         cur.close()
         return jsonify({"message": "Successfully subscribed to the newsletter."}), 201
-    except psycopg2.IntegrityError:
-        if conn:
-            conn.rollback()
-        return jsonify({"message": "This email is already subscribed."}), 200
+
     except Exception as e:
         if conn:
             conn.rollback()
@@ -61,59 +74,90 @@ def subscribe_newsletter():
 def create_reservation():
     data = request.get_json() or {}
     full_name = data.get("fullName", "").strip()
-    email = data.get("email", "").strip()
-    phone = data.get("phone", "").strip()
+    email = data.get("email", "").strip().lower()
+    phone = data.get("phone", "").strip() or None  # Optional per FR-6
     date = data.get("date", "").strip()
     time = data.get("time", "").strip()
     guests = data.get("guests")
-    special_requests = data.get("specialRequests", "").strip()
 
-    if not all([full_name, email, phone, date, time, guests]):
+    # Phone is optional per FR-6; only require name, email, date, time, guests
+    if not all([full_name, email, date, time, guests]):
         return jsonify({"error": "Missing required reservation fields."}), 400
+
+    time_slot = f"{date} {time}"
 
     conn = None
     try:
         conn = get_db_connection()
         cur = conn.cursor(cursor_factory=RealDictCursor)
 
-        # 30-Table Capacity Check for the requested date and time
+        # Check existing booked tables for this time slot
         cur.execute(
             """
-            SELECT COUNT(*) AS total_booked
-            FROM reservations
-            WHERE reservation_date = %s AND reservation_time = %s;
+            SELECT table_number 
+            FROM reservations 
+            WHERE time_slot = %s;
             """,
-            (date, time)
+            (time_slot,)
         )
-        row = cur.fetchone()
-        current_booked = row["total_booked"] if row else 0
+        booked_rows = cur.fetchall()
+        booked_tables = {row["table_number"] for row in booked_rows}
 
-        if current_booked >= CAPACITY_TABLE_LIMIT:
+        if len(booked_tables) >= CAPACITY_TABLE_LIMIT:
             cur.close()
             return jsonify({
                 "error": f"Fully booked. Maximum capacity of {CAPACITY_TABLE_LIMIT} tables reached for this time slot."
             }), 409
 
-        # Insert reservation record
+        # Random table allocation among available tables (1 to 30)
+        available_tables = [t for t in range(1, CAPACITY_TABLE_LIMIT + 1) if t not in booked_tables]
+        assigned_table = random.choice(available_tables)
+
+        # 1. Upsert customer into FR-17 customers table
+        cur.execute("SELECT customer_id FROM customers WHERE email_address = %s;", (email,))
+        customer_row = cur.fetchone()
+
+        if customer_row:
+            cust_id = customer_row["customer_id"]
+            if phone:
+                cur.execute(
+                    "UPDATE customers SET customer_name = %s, phone_number = %s WHERE customer_id = %s;",
+                    (full_name, phone, cust_id)
+                )
+        else:
+            cur.execute(
+                """
+                INSERT INTO customers (customer_name, email_address, phone_number, newsletter_signup)
+                VALUES (%s, %s, %s, FALSE)
+                RETURNING customer_id;
+                """,
+                (full_name, email, phone)
+            )
+            cust_id = cur.fetchone()["customer_id"]
+
+        # 2. Insert into FR-17 reservations table
         cur.execute(
             """
-            INSERT INTO reservations (full_name, email, phone, reservation_date, reservation_time, guests, special_requests)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
-            RETURNING id;
+            INSERT INTO reservations (customer_id, time_slot, table_number)
+            VALUES (%s, %s, %s)
+            RETURNING reservation_id;
             """,
-            (full_name, email, phone, date, time, int(guests), special_requests)
+            (cust_id, time_slot, assigned_table)
         )
-        res_id = cur.fetchone()["id"]
+        res_id = cur.fetchone()["reservation_id"]
         conn.commit()
         cur.close()
 
         return jsonify({
             "message": "Reservation confirmed.",
             "reservationId": res_id,
+            "tableNumber": assigned_table,
             "details": {
                 "name": full_name,
-                "date": date,
-                "time": time,
+                "email": email,
+                "phone": phone,
+                "timeSlot": time_slot,
+                "tableNumber": assigned_table,
                 "guests": guests
             }
         }), 201
