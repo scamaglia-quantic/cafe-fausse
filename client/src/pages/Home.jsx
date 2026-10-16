@@ -1,96 +1,64 @@
 import { Link } from 'react-router-dom'
-import { useState } from 'react'
+import homeHero from '../assets/images/home-cafe-fausse.webp'
 
 function Home() {
-  const [email, setEmail] = useState('')
-  const [message, setMessage] = useState('')
-
-  function handleNewsletter(event) {
-    event.preventDefault()
-    setMessage(`Thank you. ${email} has been added to our list.`)
-    setEmail('')
-  }
-
   return (
-    <div className="page">
-      <section className="hero">
-        <p className="eyebrow">French fine dining in New York</p>
-        <h1>Café Fausse</h1>
-        <p className="lede">
-          An intimate dining room where seasonal French cooking, quiet service,
-          and candlelight set the evening.
-        </p>
-        <div className="hero-actions">
-          <Link className="btn" to="/reservations">
-            Reserve a table
-          </Link>
-          <Link className="btn btn-ghost" to="/menu">
-            Explore the menu
-          </Link>
+    <div className="page home-page">
+      {/* FR-1: Prominent Café Fausse Branding & Hero */}
+      <section className="hero-section">
+        <div className="hero-content">
+          <p className="eyebrow">FRENCH FINE DINING</p>
+          <h1 className="brand-title">Café Fausse</h1>
+          <p className="lede">
+            An intimate dining room where seasonal French cooking, quiet service, and
+            candlelight set the evening.
+          </p>
+          <div className="hero-actions">
+            <Link to="/reservations" className="button button-primary">
+              RESERVE A TABLE
+            </Link>
+            <Link to="/menu" className="button button-outline">
+              EXPLORE THE MENU
+            </Link>
+          </div>
+        </div>
+        <div className="hero-image-wrapper">
+          <img
+            src={homeHero}
+            alt="Café Fausse dining room"
+            className="hero-image"
+            loading="eager"
+          />
         </div>
       </section>
 
-      <section className="split-section">
-        <article className="panel">
-          <h2>Hours</h2>
-          <ul className="hours-list">
-            <li>
-              <span>Tuesday – Thursday</span>
-              <span>5:00 PM – 10:00 PM</span>
-            </li>
-            <li>
-              <span>Friday – Saturday</span>
-              <span>5:00 PM – 11:00 PM</span>
-            </li>
-            <li>
-              <span>Sunday</span>
-              <span>5:00 PM – 9:00 PM</span>
-            </li>
-            <li>
-              <span>Monday</span>
-              <span>Closed</span>
-            </li>
-          </ul>
-        </article>
+      {/* FR-2: Contact Information and Hours */}
+      <section className="info-bar-section">
+        <div className="info-card">
+          <h3 className="info-heading">Location</h3>
+          <p>1234 Culinary Ave, Suite 100</p>
+          <p>Washington, DC 20002</p>
+        </div>
 
-        <article className="panel">
-          <h2>Contact</h2>
-          <p>123 Fulton Street</p>
-          <p>New York, NY 10038</p>
+        <div className="info-card">
+          <h3 className="info-heading">Reservations & Inquiries</h3>
           <p>
-            <a href="tel:+12125550123">(212) 555-0123</a>
-          </p>
-          <p>
-            <a href="mailto:reservations@cafefausse.com">
-              reservations@cafefausse.com
+            <a href="tel:2025554567" className="info-link">
+              (202) 555-4567
             </a>
           </p>
-        </article>
-      </section>
+          <p className="info-subtext">Online booking available daily</p>
+        </div>
 
-      <section className="panel newsletter">
-        <h2>Newsletter</h2>
-        <p>
-          Seasonal menus, wine dinners, and announcements, sent sparingly.
-        </p>
-        <form className="newsletter-form" onSubmit={handleNewsletter}>
-          <label htmlFor="newsletter-email">Email address</label>
-          <div className="form-row">
-            <input
-              id="newsletter-email"
-              type="email"
-              name="email"
-              required
-              placeholder="you@example.com"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-            />
-            <button className="btn" type="submit">
-              Sign up
-            </button>
-          </div>
-        </form>
-        {message ? <p className="form-success">{message}</p> : null}
+        <div className="info-card">
+          <h3 className="info-heading">Hours of Operation</h3>
+          <p>
+            <strong>Mon – Sat:</strong> 5:00 PM – 11:00 PM
+          </p>
+          <p>
+            <strong>Sunday:</strong> 5:00 PM – 9:00 PM
+          </p>
+        </div>
       </section>
     </div>
   )

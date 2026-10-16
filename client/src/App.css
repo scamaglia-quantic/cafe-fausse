@@ -363,3 +363,45 @@ select {
     flex-direction: column;
   }
 }
+
+/* FR-2: Home Page Info Bar */
+.info-bar-section {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2rem;
+  margin-top: 3.5rem;
+  padding: 2rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+}
+
+.info-card {
+  flex: 1 1 250px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.info-heading {
+  font-size: 1.1rem;
+  color: #c5a880;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.info-link {
+  color: #ffffff;
+  text-decoration: none;
+}
+
+.info-link:hover {
+  text-decoration: underline;
+}
+
+.info-subtext {
+  font-size: 0.85rem;
+  color: #888888;
+}
+
