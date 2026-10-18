@@ -219,23 +219,6 @@ export default function Reservations() {
     disabled={isSubmitting}
   />
   {errors.phone && <span className="error-message">{errors.phone}</span>}
-</div>
-
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="phone">Phone Number *</label>
-              <input
-                id="phone"
-                name="phone"
-                type="tel"
-                placeholder="(614) 555-0199"
-                value={formData.phone}
-                onChange={handleChange}
-                className={`reservation-input ${errors.phone ? 'input-error' : ''}`}
-                disabled={isSubmitting}
-              />
-              {errors.phone && <span className="error-message">{errors.phone}</span>}
-            </div>
 
             <div className="form-group">
               <label htmlFor="guests">Number of Guests *</label>
