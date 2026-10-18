@@ -1,43 +1,31 @@
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router-dom';
+import NewsletterSignup from './NewsletterSignup';
 
 function Footer() {
   return (
-    <footer style={{ marginTop: '4rem', borderTop: '1px solid rgba(255, 255, 255, 0.1)', padding: '2rem 1.5rem 1.5rem' }}>
-      <div
-        style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          gap: '1.5rem',
-          maxWidth: '1100px',
-          margin: '0 auto',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-          <span style={{ fontFamily: 'Playfair Display, serif, Georgia', fontSize: '1.1rem', color: '#c5a880', fontWeight: '600' }}>
-            Café Fausse
-          </span>
-          <span style={{ color: '#666' }}>•</span>
-          <span style={{ fontSize: '0.9rem', color: '#888888' }}>
-            French Fine Dining • Washington, DC
-          </span>
-        </div>
-
-        <nav style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem' }}>
-          <Link to="/" style={{ color: '#bbbbbb', textDecoration: 'none', fontSize: '0.9rem' }}>Home</Link>
-          <Link to="/menu" style={{ color: '#bbbbbb', textDecoration: 'none', fontSize: '0.9rem' }}>Menu</Link>
-          <Link to="/reservations" style={{ color: '#bbbbbb', textDecoration: 'none', fontSize: '0.9rem' }}>Reservations</Link>
-          <Link to="/about" style={{ color: '#bbbbbb', textDecoration: 'none', fontSize: '0.9rem' }}>About Us</Link>
-          <Link to="/gallery" style={{ color: '#bbbbbb', textDecoration: 'none', fontSize: '0.9rem' }}>Gallery</Link>
-        </nav>
+    <footer className="site-footer">
+      <div className="footer-newsletter-wrapper" style={{ maxWidth: '600px', margin: '0 auto 2.5rem', textAlign: 'center' }}>
+        <NewsletterSignup />
       </div>
 
-      <div style={{ textAlign: 'center', marginTop: '2rem', paddingTop: '1rem', borderTop: '1px solid rgba(255, 255, 255, 0.05)', fontSize: '0.8rem', color: '#666666' }}>
+      <div className="footer-compact-container">
+        <div className="footer-brand">
+          <span className="footer-logo">Café Fausse</span>
+          <span className="footer-tagline">French Fine Dining • Washington, DC</span>
+        </div>
+        <nav className="footer-nav">
+          <Link to="/">Home</Link>
+          <Link to="/menu">Menu</Link>
+          <Link to="/reservations">Reservations</Link>
+          <Link to="/about">About Us</Link>
+          <Link to="/gallery">Gallery</Link>
+        </nav>
+      </div>
+      <div className="footer-bottom">
         <p>&copy; {new Date().getFullYear()} Café Fausse. All rights reserved.</p>
       </div>
     </footer>
-  )
+  );
 }
 
-export default Footer
+export default Footer;
