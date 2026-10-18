@@ -41,7 +41,7 @@ export default function Reservations() {
       newErrors.email = 'Please enter a valid email address.';
     }
 
-    // Phone is strictly optional: only validates if user actually enters characters
+    // Phone is strictly optional: only validates if numbers are entered
     if (formData.phone && formData.phone.trim()) {
       const numericDigits = formData.phone.replace(/\D/g, '');
       if (numericDigits.length < 10) {
@@ -80,16 +80,16 @@ export default function Reservations() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch('http://localhost:5000/api/reservations', {
+      const response = await fetch('http://127.0.0.1:5000/api/reservations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          customer_name: formData.name.trim(),
-          email_address: formData.email.trim(),
-          phone_number: formData.phone.trim() || null,
-          reservation_date: formData.date,
-          reservation_time: formData.timeSlot,
-          party_size: parseInt(formData.guests, 10),
+          fullName: formData.name.trim(),
+          email: formData.email.trim(),
+          phone: formData.phone.trim() || null,
+          date: formData.date,
+          time: formData.timeSlot,
+          guests: parseInt(formData.guests, 10),
         }),
       });
 
@@ -102,7 +102,7 @@ export default function Reservations() {
 
       setSubmittedBooking({
         ...formData,
-        tableNumber: data.table_number || data.reservation?.table_number,
+        tableNumber: data.table_number || data.tableNumber || data.reservation?.table_number,
       });
     } catch (err) {
       setApiError('Unable to connect to the reservation service. Ensure the server is running.');
@@ -182,7 +182,7 @@ export default function Reservations() {
                 id="name"
                 name="name"
                 type="text"
-                placeholder="Eleanor Vance"
+                placeholder="Jane Doe"
                 value={formData.name}
                 onChange={handleChange}
                 className={`reservation-input ${errors.name ? 'input-error' : ''}`}
@@ -196,7 +196,7 @@ export default function Reservations() {
                 id="email"
                 name="email"
                 type="email"
-                placeholder="eleanor@example.com"
+                placeholder="jane@example.com"
                 value={formData.email}
                 onChange={handleChange}
                 className={`reservation-input ${errors.email ? 'input-error' : ''}`}
