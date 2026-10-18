@@ -11,7 +11,7 @@ export default function Reservations() {
   });
 
   const [errors, setErrors] = useState({});
-  const [serverError, setServerError] = useState('');
+  const [apiError, setApiError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedBooking, setSubmittedBooking] = useState(null);
 
@@ -23,7 +23,9 @@ export default function Reservations() {
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: '' }));
     }
-    if (serverError) setServerError('');
+    if (apiError) {
+      setApiError('');
+    }
   };
 
   const validateForm = () => {
@@ -39,9 +41,8 @@ export default function Reservations() {
       newErrors.email = 'Please enter a valid email address.';
     }
 
-    if (!formData.phone.trim()) {
-      newErrors.phone = 'Phone number is required.';
-    } else {
+    // Phone is strictly optional: only validates if user actually enters characters
+    if (formData.phone && formData.phone.trim()) {
       const numericDigits = formData.phone.replace(/\D/g, '');
       if (numericDigits.length < 10) {
         newErrors.phone = 'Please provide a valid 10-digit phone number with area code.';
@@ -56,8 +57,11 @@ export default function Reservations() {
       newErrors.timeSlot = 'Please select a dining time slot.';
     }
 
-    if (!formData.guests) {
-      newErrors.guests = 'Please select party size.';
+    const guestCount = parseInt(formData.guests, 10);
+    if (!guestCount || guestCount < 1) {
+      newErrors.guests = 'Party size must be at least 1 guest.';
+    } else if (guestCount > 10) {
+      newErrors.guests = 'For parties larger than 10, please contact our events team directly.';
     }
 
     return newErrors;
@@ -65,9 +69,9 @@ export default function Reservations() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setServerError('');
-    const validationErrors = validateForm();
+    setApiError('');
 
+    const validationErrors = validateForm();
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
       return;
@@ -76,34 +80,32 @@ export default function Reservations() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch('http://127.0.0.1:5000/api/reservations', {
+      const response = await fetch('http://localhost:5000/api/reservations', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          fullName: formData.name.trim(),
-          email: formData.email.trim(),
-          phone: formData.phone.trim(),
-          date: formData.date,
-          time: formData.timeSlot,
-          guests: parseInt(formData.guests, 10),
-          specialRequests: '',
+          customer_name: formData.name.trim(),
+          email_address: formData.email.trim(),
+          phone_number: formData.phone.trim() || null,
+          reservation_date: formData.date,
+          reservation_time: formData.timeSlot,
+          party_size: parseInt(formData.guests, 10),
         }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to submit reservation.');
+        setApiError(data.error || 'Unable to complete reservation. Please try again.');
+        return;
       }
 
       setSubmittedBooking({
         ...formData,
-        reservationId: data.reservationId,
+        tableNumber: data.table_number || data.reservation?.table_number,
       });
     } catch (err) {
-      setServerError(err.message || 'Unable to connect to server. Please try again.');
+      setApiError('Unable to connect to the reservation service. Ensure the server is running.');
     } finally {
       setIsSubmitting(false);
     }
@@ -119,7 +121,7 @@ export default function Reservations() {
       guests: '2',
     });
     setErrors({});
-    setServerError('');
+    setApiError('');
     setSubmittedBooking(null);
   };
 
@@ -136,9 +138,6 @@ export default function Reservations() {
           <h2>We look forward to welcoming you, {submittedBooking.name}!</h2>
           <p className="confirmation-subtitle">
             A confirmation email will be sent to <strong>{submittedBooking.email}</strong>.
-            {submittedBooking.reservationId && (
-              <span> (Confirmation #{submittedBooking.reservationId})</span>
-            )}
           </p>
 
           <div className="booking-summary-grid">
@@ -154,6 +153,12 @@ export default function Reservations() {
               <span className="summary-label">Guests</span>
               <span className="summary-val">{submittedBooking.guests} People</span>
             </div>
+            {submittedBooking.tableNumber && (
+              <div className="summary-item">
+                <span className="summary-label">Assigned Table</span>
+                <span className="summary-val">Table #{submittedBooking.tableNumber}</span>
+              </div>
+            )}
             {submittedBooking.phone && (
               <div className="summary-item">
                 <span className="summary-label">Contact</span>
@@ -168,11 +173,7 @@ export default function Reservations() {
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="reservation-form" noValidate>
-          {serverError && (
-            <div className="error-banner" style={{ color: '#d9534f', marginBottom: '1rem', fontWeight: 'bold' }}>
-              {serverError}
-            </div>
-          )}
+          {apiError && <div className="error-banner">{apiError}</div>}
 
           <div className="form-row">
             <div className="form-group">
@@ -185,7 +186,6 @@ export default function Reservations() {
                 value={formData.name}
                 onChange={handleChange}
                 className={`reservation-input ${errors.name ? 'input-error' : ''}`}
-                disabled={isSubmitting}
               />
               {errors.name && <span className="error-message">{errors.name}</span>}
             </div>
@@ -200,42 +200,39 @@ export default function Reservations() {
                 value={formData.email}
                 onChange={handleChange}
                 className={`reservation-input ${errors.email ? 'input-error' : ''}`}
-                disabled={isSubmitting}
               />
               {errors.email && <span className="error-message">{errors.email}</span>}
             </div>
           </div>
 
-          <div className="form-group">
-  <label htmlFor="phone">Phone Number (optional)</label>
-  <input
-    id="phone"
-    name="phone"
-    type="tel"
-    placeholder="(614) 555-0199"
-    value={formData.phone}
-    onChange={handleChange}
-    className={`reservation-input ${errors.phone ? 'input-error' : ''}`}
-    disabled={isSubmitting}
-  />
-  {errors.phone && <span className="error-message">{errors.phone}</span>}
+          <div className="form-row">
+            <div className="form-group">
+              <label htmlFor="phone">Phone Number (Optional)</label>
+              <input
+                id="phone"
+                name="phone"
+                type="tel"
+                placeholder="(614) 555-0199"
+                value={formData.phone}
+                onChange={handleChange}
+                className={`reservation-input ${errors.phone ? 'input-error' : ''}`}
+              />
+              {errors.phone && <span className="error-message">{errors.phone}</span>}
+            </div>
 
             <div className="form-group">
               <label htmlFor="guests">Number of Guests *</label>
-              <select
+              <input
                 id="guests"
                 name="guests"
+                type="number"
+                min="1"
+                max="10"
                 value={formData.guests}
                 onChange={handleChange}
-                className="reservation-input"
-                disabled={isSubmitting}
-              >
-                {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => (
-                  <option key={num} value={num}>
-                    {num} {num === 1 ? 'Guest' : 'Guests'}
-                  </option>
-                ))}
-              </select>
+                className={`reservation-input ${errors.guests ? 'input-error' : ''}`}
+              />
+              {errors.guests && <span className="error-message">{errors.guests}</span>}
             </div>
           </div>
 
@@ -249,7 +246,6 @@ export default function Reservations() {
                 value={formData.date}
                 onChange={handleChange}
                 className={`reservation-input ${errors.date ? 'input-error' : ''}`}
-                disabled={isSubmitting}
               />
               {errors.date && <span className="error-message">{errors.date}</span>}
             </div>
@@ -262,7 +258,6 @@ export default function Reservations() {
                 value={formData.timeSlot}
                 onChange={handleChange}
                 className={`reservation-input ${errors.timeSlot ? 'input-error' : ''}`}
-                disabled={isSubmitting}
               >
                 <option value="">Select a time slot</option>
                 <option value="5:00 PM">5:00 PM</option>
@@ -279,12 +274,8 @@ export default function Reservations() {
             </div>
           </div>
 
-          <button
-            type="submit"
-            className="btn-primary submit-booking-btn"
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? 'Submitting Reservation...' : 'Confirm Reservation Request'}
+          <button type="submit" disabled={isSubmitting} className="btn-primary submit-booking-btn">
+            {isSubmitting ? 'Confirming...' : 'Confirm Reservation Request'}
           </button>
         </form>
       )}
